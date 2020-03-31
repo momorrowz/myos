@@ -1,3 +1,21 @@
+//色
+#define black 0
+#define bright_red 1
+#define bright_green 2
+#define bright_yellow 3
+#define bright_blue 4
+#define bright_purple 5
+#define bright_light_blue 6
+#define white 7
+#define bright_gray 8
+#define dark_red 9
+#define dark_green 10
+#define dark_yellow 11
+#define dark_blue 12
+#define dark_purple 13
+#define dark_light_blue 14
+#define dark_gray 15
+
 /* 他のファイルで作った関数がありますとCコンパイラに教える */
 // nasmfunc.asmに本体
 extern void io_hlt();
@@ -9,15 +27,16 @@ extern void io_store_eflags(int eflags);
 // Mainの下
 void init_palette();
 void set_palette(int start, int end, unsigned char* rgb);
+void boxfill8(unsigned char* vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
 
 void HariMain(void)
 {
-    int i;
+    char* vram = (char*)0xa0000;
+    int xsize = 320, ysize = 200;
     init_palette();
-    char* p = (char*)0xa0000;
-    for (i = 0; i <= 0xffff; i++) {
-        p[i] = i & 0xf;
-    }
+    boxfill8(vram, xsize, bright_red, 20, 20, 120, 120);
+    boxfill8(vram, xsize, bright_green, 70, 50, 170, 150);
+    boxfill8(vram, xsize, bright_blue, 120, 80, 220, 180);
     while (1) {
         io_hlt();
     }
@@ -62,5 +81,15 @@ void set_palette(int start, int end, unsigned char* rgb)
         rgb += 3;
     }
     io_store_eflags(eflags);
+    return;
+}
+void boxfill8(unsigned char* vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1)
+{
+    int x, y;
+    for (x = x0; x <= x1; x++) {
+        for (y = y0; y <= y1; y++) {
+            vram[xsize * y + x] = c;
+        }
+    }
     return;
 }
