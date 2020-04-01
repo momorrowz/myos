@@ -5,3 +5,4 @@
 *.hrb
 *.o
 build/
+.vscode/

@@ -1,36 +1,28 @@
+#include "bootpack.h"
+#include "address.h"
 #include "dsctbl.h"
 #include "graphic.h"
-
-struct BOOTINFO {
-    char cyls, leds, vmode, reserve;
-    short scrnx, scrny;
-    char* vram;
-} typedef bootinfo;
-
-// nasmfunc.asmに本体
-//extern void io_hlt();
-//extern void io_cli();
-//extern void io_out8(int port, int data);
-//extern int io_load_eflags();
-//extern void io_store_eflags(int eflags);
-
-//void load_gdtr(int limit, int addr);
-//void load_idtr(int limit, int addr);
-
-extern char hankaku[4096];
+#include "interrupt.h"
 
 void HariMain(void)
 {
-    bootinfo* binfo = (bootinfo*)0x0ff0;
+    bootinfo* binfo = (bootinfo*)ADR_BOOTINFO;
+    init_gdtidt();
+    init_pic();
+    io_sti();
+
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
-    char* s;
     int mx = 152, my = 78;
+    char s[40], mouse_cursor[256];
     mysprintf(s, "(%d, %d)", mx, my);
     put_font8_asc(binfo->vram, binfo->scrnx, 0, 0, white, s);
-    char mouse_cursor[256];
     init_mouse_cursor8(mouse_cursor, dark_light_blue);
     putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mouse_cursor, 16);
+
+    io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */
+    io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
+
     while (1) {
         io_hlt();
     }
