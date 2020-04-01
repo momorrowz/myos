@@ -1,44 +1,53 @@
+SRC_DIR = ./src
+ASM_DIR = ./asm
+BIN_DIR = ./build
+SRCS := $(wildcard $(SRC_DIR)/*.c)
+
 default:
 	make img
 
-ipl10.bin : ipl10.asm Makefile
-	nasm ipl10.asm -o ipl10.bin -l ipl10.lst
+$(BIN_DIR)/ipl10.bin : $(ASM_DIR)/ipl10.asm
+	@if [ ! -d $(BIN_DIR) ]; \
+      then echo "mkdir -p $(BIN_DIR)"; mkdir -p $(BIN_DIR); \
+      fi
+	nasm $< -o $@ -l $(BIN_DIR)/ipl10.lst
 
-asmhead.bin : asmhead.asm Makefile
-	nasm asmhead.asm -o asmhead.bin -l asmhead.lst
+$(BIN_DIR)/asmhead.bin : $(ASM_DIR)/asmhead.asm
+	nasm $< -o $@ -l $(BIN_DIR)/asmhead.lst
 
-nasmfunc.o : nasmfunc.asm Makefile
-	nasm -g -f elf nasmfunc.asm -o nasmfunc.o
+$(BIN_DIR)/nasmfunc.o : $(ASM_DIR)/nasmfunc.asm
+	nasm -g -f elf $< -o $@
 
-hankaku_converter.o : hankaku_converter.c
-	gcc -o hankaku_converter.o hankaku_converter.c
+#$(BIN_DIR)/hankaku_converter.o : $(SRC_DIR)/hankaku_converter.c
+#	gcc -o $@ $<
 
-hankaku.c : hankaku_converter.o
-	./hankaku_converter.o
+#$(SRC_DIR)/hankaku.c : $(BIN_DIR)/hankaku_converter.o
+#	./$<
 
-bootpack.hrb : bootpack.c hankaku.c har.ld nasmfunc.o Makefile
-	gcc -O0 -march=i486 -m32 -fno-pic -nostdlib -T har.ld -g bootpack.c hankaku.c mysprintf.c nasmfunc.o -o bootpack.hrb
+$(BIN_DIR)/bootpack.hrb : $(SRCS) har.ld $(BIN_DIR)/nasmfunc.o
+	gcc -march=i486 -m32 -fno-pic -nostdlib -T har.ld -g $(SRCS) $(BIN_DIR)/nasmfunc.o -o $@
 
-haribote.sys : asmhead.bin bootpack.hrb Makefile
-	cat asmhead.bin bootpack.hrb > haribote.sys
+$(BIN_DIR)/haribote.sys : $(BIN_DIR)/asmhead.bin $(BIN_DIR)/bootpack.hrb
+	cat $(BIN_DIR)/asmhead.bin $(BIN_DIR)/bootpack.hrb > $@
 
-haribote.img : ipl10.bin haribote.sys Makefile
-	mformat -f 1440 -C -B ipl10.bin -i haribote.img ::
-	mcopy haribote.sys -i haribote.img ::
+$(BIN_DIR)/haribote.img : $(BIN_DIR)/ipl10.bin $(BIN_DIR)/haribote.sys
+	mformat -f 1440 -C -B $(BIN_DIR)/ipl10.bin -i $@ ::
+	mcopy $(BIN_DIR)/haribote.sys -i $@ ::
 
+.PHONY: asm img run debug clean 
 asm :
-	make -r ipl10.bin
+	make -r $(BIN_DIR)/ipl10.bin
 
 img :
-	make -r haribote.img
+	make -r $(BIN_DIR)/haribote.img
 
 run :
 	make img
-	qemu-system-i386 -fda haribote.img  # "-fda" for floppy disk
+	qemu-system-i386 -fda $(BIN_DIR)/haribote.img  # "-fda" for floppy disk
 
 debug :
 	make img
-	qemu-system-i386 -fda haribote.img -gdb tcp::10000 -S
+	qemu-system-i386 -fda $(BIN_DIR)/haribote.img -gdb tcp::10000 -S
 
 clean :
-	rm *.lst *.bin *.sys *.img *.hrb *.o
+	rm -rf build
