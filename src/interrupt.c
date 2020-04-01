@@ -3,6 +3,8 @@
 #include "bootpack.h"
 #include "graphic.h"
 
+struct KEYBUF keybuf;
+
 void init_pic()
 {
     io_out8(PIC0_IMR, 0xff); /* 全ての割り込みを受け付けない */
@@ -28,12 +30,12 @@ void inthandler21(int* esp)
 /* PS/2キーボードからの割り込み */
 {
     struct BOOTINFO* binfo = (struct BOOTINFO*)ADR_BOOTINFO;
-    unsigned char data, s[4];
     io_out8(PIC0_OCW2, 0x61);
-    data = io_in8(PORT_KEYDAT);
-    mysprintf(s, "%x", data);
-    boxfill8(binfo->vram, binfo->scrnx, bright_light_blue, 0, 16, 15, 31);
-    put_font8_asc(binfo->vram, binfo->scrnx, 0, 16, white, s);
+    unsigned char data = io_in8(PORT_KEYDAT);
+    if (keybuf.flag == 0) {
+        keybuf.data = data;
+        keybuf.flag = 1;
+    }
     return;
 }
 

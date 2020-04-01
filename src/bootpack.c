@@ -24,6 +24,16 @@ void HariMain(void)
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
 
     while (1) {
-        io_hlt();
+        io_cli();
+        if (keybuf.flag == 0) {
+            io_stihlt();
+        } else {
+            unsigned char data = keybuf.data;
+            keybuf.flag = 0;
+            io_sti();
+            mysprintf(s, "%x", data);
+            boxfill8(binfo->vram, binfo->scrnx, dark_light_blue, 0, 16, 15, 31);
+            put_font8_asc(binfo->vram, binfo->scrnx, 0, 16, white, s);
+        }
     }
 }
