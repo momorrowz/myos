@@ -25,7 +25,7 @@ $(BIN_DIR)/nasmfunc.o : $(ASM_DIR)/nasmfunc.asm
 #	./$<
 
 $(BIN_DIR)/bootpack.hrb : $(SRCS) har.ld $(BIN_DIR)/nasmfunc.o
-	gcc -march=i486 -m32 -fno-pic -nostdlib -T har.ld -g $(SRCS) $(BIN_DIR)/nasmfunc.o -o $@
+	gcc -march=i486 -m32 -fno-pic -nostdlib -I./include -T har.ld -g $(SRCS) $(BIN_DIR)/nasmfunc.o -o $@
 
 $(BIN_DIR)/haribote.sys : $(BIN_DIR)/asmhead.bin $(BIN_DIR)/bootpack.hrb
 	cat $(BIN_DIR)/asmhead.bin $(BIN_DIR)/bootpack.hrb > $@
