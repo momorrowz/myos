@@ -10,8 +10,14 @@ asmhead.bin : asmhead.asm Makefile
 nasmfunc.o : nasmfunc.asm Makefile
 	nasm -g -f elf nasmfunc.asm -o nasmfunc.o
 
-bootpack.hrb : bootpack.c har.ld nasmfunc.o Makefile
-	gcc -O0 -march=i486 -m32 -fno-pic -nostdlib -T har.ld -g bootpack.c nasmfunc.o -o bootpack.hrb
+hankaku_converter.o : hankaku_converter.c
+	gcc -o hankaku_converter.o hankaku_converter.c
+
+hankaku.c : hankaku_converter.o
+	./hankaku_converter.o
+
+bootpack.hrb : bootpack.c hankaku.c har.ld nasmfunc.o Makefile
+	gcc -O0 -march=i486 -m32 -fno-pic -nostdlib -T har.ld -g bootpack.c hankaku.c mysprintf.c nasmfunc.o -o bootpack.hrb
 
 haribote.sys : asmhead.bin bootpack.hrb Makefile
 	cat asmhead.bin bootpack.hrb > haribote.sys

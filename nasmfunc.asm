@@ -4,6 +4,7 @@ section .text
 		global io_in8,io_in16,io_in32
 		global io_out8,io_out16,io_out32
 		global io_load_eflags,io_store_eflags
+		global load_gdtr,load_idtr
 
 
 io_hlt:	; void io_hlt(void);
@@ -69,3 +70,15 @@ io_store_eflags: ;void io_store_eflags(int flags);
 		push eax
 		popfd	
 		ret
+
+load_gdtr:		; void load_gdtr(int limit, int addr);
+		mov		AX,[ESP+4]		; limit
+		MOV		[ESP+6],AX
+		LGDT	[ESP+6]
+		RET
+
+load_idtr:		; void load_idtr(int limit, int addr);
+		MOV		AX,[ESP+4]		; limit
+		MOV		[ESP+6],AX
+		LIDT	[ESP+6]
+		RET
