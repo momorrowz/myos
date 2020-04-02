@@ -1,6 +1,7 @@
 #include "bootpack.h"
 #include "address.h"
 #include "dsctbl.h"
+#include "fifo.h"
 #include "graphic.h"
 #include "interrupt.h"
 
@@ -23,17 +24,14 @@ void HariMain(void)
     io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
 
+    char keybuf[32];
+    fifo8_init(&keyfifo, 32, keybuf);
     while (1) {
         io_cli();
-        if (keybuf.len == 0) {
+        if (fifo8_status(&keyfifo) == 0) {
             io_stihlt();
         } else {
-            unsigned char data = keybuf.data[keybuf.next_r];
-            keybuf.len--;
-            keybuf.next_r++;
-            if (keybuf.next_r == 32) {
-                keybuf.next_r = 0;
-            }
+            unsigned char data = fifo8_get(&keyfifo);
             io_sti();
             mysprintf(s, "%x", data);
             boxfill8(binfo->vram, binfo->scrnx, dark_light_blue, 0, 16, 15, 31);

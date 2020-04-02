@@ -1,9 +1,10 @@
 #include "interrupt.h"
 #include "address.h"
 #include "bootpack.h"
+#include "fifo.h"
 #include "graphic.h"
 
-struct KEYBUF keybuf;
+//struct KEYBUF keybuf;
 
 void init_pic()
 {
@@ -29,6 +30,7 @@ void init_pic()
 void inthandler21(int* esp)
 /* PS/2キーボードからの割り込み */
 {
+    /*
     struct BOOTINFO* binfo = (struct BOOTINFO*)ADR_BOOTINFO;
     io_out8(PIC0_OCW2, 0x61);
     unsigned char data = io_in8(PORT_KEYDAT);
@@ -40,6 +42,10 @@ void inthandler21(int* esp)
             keybuf.next_w = 0;
         }
     }
+    */
+    io_out8(PIC0_OCW2, 0x61);
+    unsigned char data = io_in8(PORT_KEYDAT);
+    fifo8_put(&keyfifo, data);
     return;
 }
 
