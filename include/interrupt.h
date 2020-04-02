@@ -17,7 +17,8 @@
 #define PORT_KEYDAT 0x0060
 
 struct KEYBUF {
-    unsigned char data, flag;
+    unsigned char data[32];
+    int next_r, next_w, len;
 };
 
 extern struct KEYBUF keybuf;
