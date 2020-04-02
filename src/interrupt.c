@@ -1,10 +1,9 @@
 #include "interrupt.h"
 #include "address.h"
 #include "bootpack.h"
-#include "fifo.h"
 #include "graphic.h"
-
-//struct KEYBUF keybuf;
+#include "keyboard.h"
+#include "mouse.h"
 
 void init_pic()
 {
@@ -30,19 +29,6 @@ void init_pic()
 void inthandler21(int* esp)
 /* PS/2キーボードからの割り込み */
 {
-    /*
-    struct BOOTINFO* binfo = (struct BOOTINFO*)ADR_BOOTINFO;
-    io_out8(PIC0_OCW2, 0x61);
-    unsigned char data = io_in8(PORT_KEYDAT);
-    if (keybuf.len < 32) {
-        keybuf.data[keybuf.next_w] = data;
-        keybuf.len++;
-        keybuf.next_w++;
-        if (keybuf.next_w == 32) {
-            keybuf.next_w = 0;
-        }
-    }
-    */
     io_out8(PIC0_OCW2, 0x61);
     unsigned char data = io_in8(PORT_KEYDAT);
     fifo8_put(&keyfifo, data);
@@ -52,12 +38,11 @@ void inthandler21(int* esp)
 void inthandler2c(int* esp)
 /* PS/2マウスからの割り込み */
 {
-    struct BOOTINFO* binfo = (struct BOOTINFO*)ADR_BOOTINFO;
-    boxfill8(binfo->vram, binfo->scrnx, black, 0, 0, 32 * 8 - 1, 15);
-    put_font8_asc(binfo->vram, binfo->scrnx, 0, 0, white, "INT 2C (IRQ-12) : PS/2 mouse");
-    for (;;) {
-        io_hlt();
-    }
+    io_out8(PIC1_OCW2, 0x64);
+    io_out8(PIC0_OCW2, 0x62);
+    unsigned char data = io_in8(PORT_KEYDAT);
+    fifo8_put(&mousefifo, data);
+    return;
 }
 
 void inthandler27(int* esp)

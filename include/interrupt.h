@@ -21,8 +21,6 @@ struct KEYBUF {
     int next_r, next_w, len;
 };
 
-//extern struct KEYBUF keybuf;
-
 void init_pic(void);
 void inthandler21(int* esp);
 void inthandler27(int* esp);
