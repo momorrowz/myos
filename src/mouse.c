@@ -35,8 +35,8 @@ int mouse_decode(struct MOUSE_DEC* mdec, unsigned char data)
         mdec->buf[2] = data;
         mdec->phase = 1;
         mdec->btn = mdec->buf[0] & 0x07;
-        mdec->x = (int)mdec->buf[1];
-        mdec->y = (int)mdec->buf[2];
+        mdec->x = mdec->buf[1];
+        mdec->y = mdec->buf[2];
         if ((mdec->buf[0] & 0x10) != 0) {
             mdec->x |= 0xffffff00;
         }
@@ -44,7 +44,7 @@ int mouse_decode(struct MOUSE_DEC* mdec, unsigned char data)
             mdec->y |= 0xffffff00;
         }
         //TODO これ逆なの？
-        //mdec->y *= -1;
+        mdec->y *= -1;
         return 1;
     }
     return -1;
