@@ -28,8 +28,8 @@ void HariMain(void)
     init_mouse_cursor8(mouse_cursor, dark_light_blue);
     putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mouse_cursor, 16);
 
-    unsigned char mouse_dbuf[3], mouse_phase = 0;
-    enable_mouse();
+    struct MOUSE_DEC mdec;
+    enable_mouse(&mdec);
 
     while (1) {
         io_cli();
@@ -37,30 +37,26 @@ void HariMain(void)
             io_stihlt();
         } else {
             if (fifo8_status(&keyfifo) != 0) {
-                unsigned char data = fifo8_get(&keyfifo);
+                int data = fifo8_get(&keyfifo);
                 io_sti();
                 mysprintf(s, "%x", data);
                 boxfill8(binfo->vram, binfo->scrnx, dark_light_blue, 0, 16, 15, 31);
                 put_font8_asc(binfo->vram, binfo->scrnx, 0, 16, white, s);
             } else if (fifo8_status(&mousefifo) != 0) {
-                unsigned char data = fifo8_get(&mousefifo);
+                int data = fifo8_get(&mousefifo);
                 io_sti();
-                if (mouse_phase == 0) {
-                    if (data == 0xfa) {
-                        mouse_phase = 1;
+                if (mouse_decode(&mdec, data) != 0) {
+                    mysprintf(s, "[lcr %d %d]", mdec.x, mdec.y);
+                    if ((mdec.btn & 0x01) != 0) {
+                        s[1] = 'L';
                     }
-                } else if (mouse_phase == 1) {
-                    mouse_dbuf[0] = data;
-                    mouse_phase = 2;
-                } else if (mouse_phase == 2) {
-                    mouse_dbuf[1] = data;
-                    mouse_phase = 3;
-
-                } else if (mouse_phase == 3) {
-                    mouse_dbuf[2] = data;
-                    mouse_phase = 1;
-                    mysprintf(s, "%x %x %x", mouse_dbuf[0], mouse_dbuf[1], mouse_dbuf[2]);
-                    boxfill8(binfo->vram, binfo->scrnx, dark_light_blue, 32, 16, 32 + 8 * 8 - 1, 31);
+                    if ((mdec.btn & 0x02) != 0) {
+                        s[3] = 'R';
+                    }
+                    if ((mdec.btn & 0x04) != 0) {
+                        s[2] = 'C';
+                    }
+                    boxfill8(binfo->vram, binfo->scrnx, dark_light_blue, 32, 16, 32 + 15 * 8 - 1, 31);
                     put_font8_asc(binfo->vram, binfo->scrnx, 32, 16, white, s);
                 }
             }

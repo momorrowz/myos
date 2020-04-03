@@ -4,7 +4,11 @@
 int dec2asc(char* str, int dec)
 {
     int len = 0, len_buf;  //桁数
-    int buf[10];
+    int buf[10], is_negative = 0;
+    if (dec < 0) {
+        is_negative = 1;
+        dec *= -1;
+    }
     while (1) {  //10で割れた回数（つまり桁数）をlenに、各桁をbufに格納
         buf[len++] = dec % 10;
         if (dec < 10)
@@ -12,6 +16,10 @@ int dec2asc(char* str, int dec)
         dec /= 10;
     }
     len_buf = len;
+    if (is_negative == 1) {
+        ++len_buf;
+        *(str++) = '-';
+    }
     while (len) {
         *(str++) = buf[--len] + 0x30;
     }
@@ -22,7 +30,11 @@ int dec2asc(char* str, int dec)
 int hex2asc(char* str, int dec)
 {                          //10で割れた回数（つまり桁数）をlenに、各桁をbufに格納
     int len = 0, len_buf;  //桁数
-    int buf[10];
+    int buf[10], is_negative = 0;
+    if (dec < 0) {
+        is_negative = 1;
+        dec *= -1;
+    }
     while (1) {
         buf[len++] = dec % 16;
         if (dec < 16)
@@ -30,6 +42,10 @@ int hex2asc(char* str, int dec)
         dec /= 16;
     }
     len_buf = len;
+    if (is_negative == 1) {
+        ++len_buf;
+        *(str++) = '-';
+    }
     while (len) {
         len--;
         *(str++) = (buf[len] < 10) ? (buf[len] + 0x30) : (buf[len] - 9 + 0x60);
