@@ -5,6 +5,7 @@
 #include "graphic.h"
 #include "interrupt.h"
 #include "keyboard.h"
+#include "memman.h"
 #include "memory.h"
 #include "mouse.h"
 
@@ -32,8 +33,12 @@ void HariMain(void)
     struct MOUSE_DEC mdec;
     enable_mouse(&mdec);
 
-    int i = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
-    mysprintf(s, "memory %dMB", i);
+    struct MEMMON* memman = (struct MEMMON*)MEMMAN_ADDR;
+    unsigned int memtotal = memtest(0x00400000, 0xbfffffff);
+    memman_init(&memman);
+    memman_free(&memman, 0x1000, 0x9e000);  //0x01000-0x9efff
+    memman_free(&memman, 0x400000, memtotal - 0x400000);
+    mysprintf(s, "memory %dMB   free : %dKB", memtotal / (1024 * 1024), memman_total(&memman) / 1024);
     put_font8_asc(binfo->vram, binfo->scrnx, 0, 32, white, s);
 
 
