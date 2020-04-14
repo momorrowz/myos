@@ -6,6 +6,7 @@ section .text
 		global io_load_eflags,io_store_eflags
 		global load_gdtr,load_idtr
 		global asm_inthandler21,asm_inthandler27,asm_inthandler2c
+		global load_cr0,store_cr0
 		extern inthandler21,inthandler2c,inthandler27
 
 
@@ -132,3 +133,12 @@ asm_inthandler2c:
 		pop ds
 		pop es
 		iretd
+
+load_cr0:
+		mov eax,cr0
+		ret
+
+store_cr0:
+		mov eax,[esp+4]
+		mov cr0,eax
+		ret

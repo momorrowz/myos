@@ -5,6 +5,7 @@
 #include "graphic.h"
 #include "interrupt.h"
 #include "keyboard.h"
+#include "memory.h"
 #include "mouse.h"
 
 void HariMain(void)
@@ -30,6 +31,11 @@ void HariMain(void)
 
     struct MOUSE_DEC mdec;
     enable_mouse(&mdec);
+
+    int i = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
+    mysprintf(s, "memory %dMB", i);
+    put_font8_asc(binfo->vram, binfo->scrnx, 0, 32, white, s);
+
 
     while (1) {
         io_cli();

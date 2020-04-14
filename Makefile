@@ -43,11 +43,11 @@ img :
 
 run :
 	make img
-	qemu-system-i386 -fda $(BIN_DIR)/haribote.img  # "-fda" for floppy disk
+	qemu-system-i386 -m 32 -fda $(BIN_DIR)/haribote.img  # "-fda" for floppy disk
 
 debug :
 	make img
-	qemu-system-i386 -fda $(BIN_DIR)/haribote.img -gdb tcp::10000 -S
+	qemu-system-i386 -m 32 -fda $(BIN_DIR)/haribote.img -gdb tcp::10000 -S
 
 clean :
 	rm -rf build
