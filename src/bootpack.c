@@ -1,13 +1,6 @@
 #include "bootpack.h"
-#include "address.h"
-#include "dsctbl.h"
-#include "fifo.h"
-#include "graphic.h"
-#include "interrupt.h"
-#include "keyboard.h"
-#include "memman.h"
-#include "memory.h"
-#include "mouse.h"
+
+void init();
 
 void HariMain(void)
 {
@@ -15,32 +8,50 @@ void HariMain(void)
     init_gdtidt();
     init_pic();
     io_sti();
-    char keybuf[32], mousebuf[128], s[40], mouse_cursor[256];
+
+    //キーボードマウスの初期化
+    char keybuf[32], mousebuf[128];
     fifo8_init(&keyfifo, 32, keybuf);
     fifo8_init(&mousefifo, 128, mousebuf);
     io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
-
     init_keyboard();
-    init_palette();
-    init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
-    int mx = 152, my = 78;
-    mysprintf(s, "(%d, %d)", mx, my);
-    put_font8_asc(binfo->vram, binfo->scrnx, 0, 0, white, s);
-    init_mouse_cursor8(mouse_cursor, dark_light_blue);
-    putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mouse_cursor, 16);
-
     struct MOUSE_DEC mdec;
     enable_mouse(&mdec);
 
-    struct MEMMON* memman = (struct MEMMON*)MEMMAN_ADDR;
+    //メモリマネージャ
+    struct MEMMAN* memman = (struct MEMMAN*)MEMMAN_ADDR;
     unsigned int memtotal = memtest(0x00400000, 0xbfffffff);
-    memman_init(&memman);
-    memman_free(&memman, 0x1000, 0x9e000);  //0x01000-0x9efff
-    memman_free(&memman, 0x400000, memtotal - 0x400000);
-    mysprintf(s, "memory %dMB   free : %dKB", memtotal / (1024 * 1024), memman_total(&memman) / 1024);
-    put_font8_asc(binfo->vram, binfo->scrnx, 0, 32, white, s);
+    memman_init(memman);
+    memman_free(memman, 0x1000, 0x9e000);  //0x01000-0x9efff
+    memman_free(memman, 0x400000, memtotal - 0x400000);
 
+    //画面の初期化
+    struct SHTCTL* shtctl;
+    struct SHEET *sht_back, *sht_mouse;
+    unsigned char *buf_back, buf_mouse[256];
+    char s[40], mouse_cursor[256];
+    init_palette();
+    shtctl = shtctl_init(memman, binfo->vram, binfo->scrnx, binfo->scrny);
+    sht_back = sheet_alloc(shtctl);
+    sht_mouse = sheet_alloc(shtctl);
+    buf_back = (unsigned char*)memman_alloc_4k(memman, binfo->scrnx * binfo->scrny);
+    sheet_setbuf(sht_back, buf_back, binfo->scrnx, binfo->scrny, -1);
+    sheet_setbuf(sht_mouse, buf_mouse, 16, 16, 99);
+    init_screen(buf_back, binfo->scrnx, binfo->scrny);
+    init_mouse_cursor8(buf_mouse, 99);
+    //init_mouse_cursor8(mouse_cursor, dark_light_blue);
+    sheet_slide(shtctl, sht_back, 0, 0);
+    int mx = (binfo->scrnx - 16) / 2;
+    int my = (binfo->scrny - 28 - 16) / 2;
+    sheet_slide(shtctl, sht_mouse, mx, my);
+    sheet_updown(shtctl, sht_back, 0);
+    sheet_updown(shtctl, sht_mouse, 1);
+    mysprintf(s, "(%d, %d)", mx, my);
+    put_font8_asc(buf_back, binfo->scrnx, 0, 0, white, s);
+    mysprintf(s, "memory %dMB   free : %dKB", memtotal / (1024 * 1024), memman_total(&memman) / 1024);
+    put_font8_asc(buf_back, binfo->scrnx, 0, 32, white, s);
+    sheet_refresh(shtctl);
 
     while (1) {
         io_cli();
@@ -51,8 +62,9 @@ void HariMain(void)
                 int data = fifo8_get(&keyfifo);
                 io_sti();
                 mysprintf(s, "%x", data);
-                boxfill8(binfo->vram, binfo->scrnx, dark_light_blue, 0, 16, 15, 31);
-                put_font8_asc(binfo->vram, binfo->scrnx, 0, 16, white, s);
+                boxfill8(buf_back, binfo->scrnx, dark_light_blue, 0, 16, 15, 31);
+                put_font8_asc(buf_back, binfo->scrnx, 0, 16, white, s);
+                sheet_refresh(shtctl);
             } else if (fifo8_status(&mousefifo) != 0) {
                 int data = fifo8_get(&mousefifo);
                 io_sti();
@@ -67,9 +79,8 @@ void HariMain(void)
                     if ((mdec.btn & 0x04) != 0) {
                         s[2] = 'C';
                     }
-                    boxfill8(binfo->vram, binfo->scrnx, dark_light_blue, 32, 16, 32 + 15 * 8 - 1, 31);
-                    put_font8_asc(binfo->vram, binfo->scrnx, 32, 16, white, s);
-                    boxfill8(binfo->vram, binfo->scrnx, dark_light_blue, mx, my, mx + 15, my + 15);
+                    boxfill8(buf_back, binfo->scrnx, dark_light_blue, 32, 16, 32 + 15 * 8 - 1, 31);
+                    put_font8_asc(buf_back, binfo->scrnx, 32, 16, white, s);
                     mx += mdec.x;
                     my += mdec.y;
                     if (mx < 0) {
@@ -85,9 +96,9 @@ void HariMain(void)
                         my = binfo->scrny - 16;
                     }
                     mysprintf(s, "(%d, %d)", mx, my);
-                    boxfill8(binfo->vram, binfo->scrnx, dark_light_blue, 0, 0, 79, 15);
-                    put_font8_asc(binfo->vram, binfo->scrnx, 0, 0, white, s);
-                    putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mouse_cursor, 16);
+                    boxfill8(buf_back, binfo->scrnx, dark_light_blue, 0, 0, 79, 15);
+                    put_font8_asc(buf_back, binfo->scrnx, 0, 0, white, s);
+                    sheet_slide(shtctl, sht_mouse, mx, my);
                 }
             }
         }
