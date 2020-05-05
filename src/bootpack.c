@@ -49,9 +49,9 @@ void HariMain(void)
     sheet_updown(shtctl, sht_mouse, 1);
     mysprintf(s, "(%d, %d)", mx, my);
     put_font8_asc(buf_back, binfo->scrnx, 0, 0, white, s);
-    mysprintf(s, "memory %dMB   free : %dKB", memtotal / (1024 * 1024), memman_total(&memman) / 1024);
+    mysprintf(s, "memory %dMB   free : %dKB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
     put_font8_asc(buf_back, binfo->scrnx, 0, 32, white, s);
-    sheet_refresh(shtctl);
+    sheet_refresh(shtctl, sht_back, 0, 0, binfo->scrnx, 48);
 
     while (1) {
         io_cli();
@@ -64,7 +64,7 @@ void HariMain(void)
                 mysprintf(s, "%x", data);
                 boxfill8(buf_back, binfo->scrnx, dark_light_blue, 0, 16, 15, 31);
                 put_font8_asc(buf_back, binfo->scrnx, 0, 16, white, s);
-                sheet_refresh(shtctl);
+                sheet_refresh(shtctl, sht_back, 0, 16, 16, 32);
             } else if (fifo8_status(&mousefifo) != 0) {
                 int data = fifo8_get(&mousefifo);
                 io_sti();
@@ -81,6 +81,7 @@ void HariMain(void)
                     }
                     boxfill8(buf_back, binfo->scrnx, dark_light_blue, 32, 16, 32 + 15 * 8 - 1, 31);
                     put_font8_asc(buf_back, binfo->scrnx, 32, 16, white, s);
+                    sheet_refresh(shtctl, sht_back, 32, 16, 32 + 15 * 8, 32);
                     mx += mdec.x;
                     my += mdec.y;
                     if (mx < 0) {
@@ -98,6 +99,7 @@ void HariMain(void)
                     mysprintf(s, "(%d, %d)", mx, my);
                     boxfill8(buf_back, binfo->scrnx, dark_light_blue, 0, 0, 79, 15);
                     put_font8_asc(buf_back, binfo->scrnx, 0, 0, white, s);
+                    sheet_refresh(shtctl, sht_back, 0, 0, 80, 16);
                     sheet_slide(shtctl, sht_mouse, mx, my);
                 }
             }
