@@ -11,6 +11,7 @@
 #include "memory.h"
 #include "mouse.h"
 #include "sheet.h"
+#include "window.h"
 
 struct BOOTINFO { /* 0x0ff0-0x0fff */
     char cyls;    /* ブートセクタはどこまでディスクを読んだのか */
